@@ -18,8 +18,8 @@ defmodule TestApp.Supervisor do
   defp children do
     [
       storage_child_spec(),
-      parser_child_spec(),
-      sender_child_spec()
+      sender_child_spec(),
+      parser_child_spec()
     ]
   end
 
@@ -30,17 +30,17 @@ defmodule TestApp.Supervisor do
     }
   end
 
-  defp parser_child_spec do
-    %{
-      id: Parser,
-      start: {Parser, :start_link, []}
-    }
-  end
-
   defp sender_child_spec do
     %{
       id: Sender,
-      start: {Sender, :start_link, []}
+      start: {Sender, :start_send, []}
+    }
+  end
+
+  defp parser_child_spec do
+    %{
+      id: Parser,
+      start: {Parser, :start_parse, []}
     }
   end
 end

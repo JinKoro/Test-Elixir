@@ -14,7 +14,11 @@ defmodule TestApp.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {TestApp.Application, []}
+      mod: {TestApp.Application, []},
+      applications: [
+        :httpoison,
+        :jason
+      ]
     ]
   end
 

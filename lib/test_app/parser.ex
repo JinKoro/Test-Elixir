@@ -1,47 +1,44 @@
 defmodule TestApp.Parser do
-  use GenServer
-
   @url "https://www.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1"
 
-  @impl true
-  def init(state) do
-    start_parse()
-    {:ok, state}
-  end
-
-  def start_link() do
-    GenServer.start_link(__MODULE__, :ok, [])
-  end
-
-  @impl true
-  def handle_info(:parse, state) do
-    start_parse()
-    {:noreply, state}
-  end
-
   def start_parse() do
-    parse(@url)
     Process.send_after(
-      self(),
-      :parse,
+      spawn(__MODULE__, :handle_info, []),
+      :ok,
       10000
     )
+
+    {:ok, self()}
+  end
+
+  def handle_info do
+    receive do
+      :ok -> parse(@url)
+      _ -> raise "Unknown receiving content"
+    end
+
+    start_parse()
   end
 
   defp parse(url) do
-    HTTPoison.start()
     case HTTPoison.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        list = Jason.decode!(body)
-        TestApp.Storage.put(
-          %{
-            funding_time: hd(list)["fundingTime"],
-            funding_rate: hd(list)["fundingRate"]
-          },
-          :process_parse
-        )
+        case Jason.decode!(body) do
+          [map] ->
+            TestApp.Storage.put(
+              %{
+                funding_time: map["fundingTime"],
+                funding_rate: map["fundingRate"]
+              },
+              :process_parse
+            )
+
+          _ ->
+            {:error, "More than one element"}
+        end
+
       {:error, %HTTPoison.Error{reason: reason}} ->
-        IO.inspect reason
+        IO.inspect(reason)
     end
   end
 end
