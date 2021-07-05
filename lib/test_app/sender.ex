@@ -1,7 +1,7 @@
 defmodule TestApp.Sender do
   @spec start_send :: {:ok, pid}
   def start_send do
-    pid = spawn(__MODULE__, :handle_info, [])
+    pid = spawn_link(__MODULE__, :handle_info, [])
     Process.register(pid, :sender)
     send()
 
