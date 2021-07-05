@@ -4,15 +4,14 @@ defmodule TestApp.Sender do
   @spec start_send :: {:ok, pid}
   def start_send do
     pid = spawn_link(__MODULE__, :handle_info, [])
-    Process.register(pid, :sender)
-    send()
+    Process.send(pid, :send_request, [])
 
     {:ok, pid}
   end
 
   def handle_info do
     receive do
-      pid when is_pid(pid) -> send()
+      :send_request -> send()
       _ -> Logger.debug("Unexpected message received")
     end
 
@@ -24,8 +23,8 @@ defmodule TestApp.Sender do
     TestApp.Storage.put(data, :process_send)
 
     Process.send_after(
-      :sender,
-      Process.whereis(:sender),
+      self(),
+      :send_request,
       6000
     )
   end

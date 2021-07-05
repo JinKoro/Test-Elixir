@@ -6,15 +6,14 @@ defmodule TestApp.Parser do
   @spec start_parse :: {:ok, pid}
   def start_parse() do
     pid = spawn_link(__MODULE__, :handle_info, [])
-    Process.register(pid, :parser)
-    parse()
+    Process.send(pid, :send_request, [])
 
     {:ok, pid}
   end
 
   def handle_info do
     receive do
-      pid when is_pid(pid) -> parse()
+      :send_request -> parse()
       _ -> Logger.debug("Unknown receiving content")
     end
 
@@ -37,8 +36,8 @@ defmodule TestApp.Parser do
     end
 
     Process.send_after(
-      :parser,
-      Process.whereis(:parser),
+      self(),
+      :send_request,
       10000
     )
   end
