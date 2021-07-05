@@ -10,7 +10,6 @@ defmodule TestApp.Parser do
     {:ok, pid}
   end
 
-  @spec handle_info :: no_return
   def handle_info do
     receive do
       pid when is_pid(pid) -> parse()
