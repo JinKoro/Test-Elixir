@@ -1,4 +1,6 @@
 defmodule TestApp.Parser do
+  require Logger
+
   @url "https://www.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1"
 
   @spec start_parse :: {:ok, pid}
@@ -13,37 +15,31 @@ defmodule TestApp.Parser do
   def handle_info do
     receive do
       pid when is_pid(pid) -> parse()
-      _ -> IO.inspect("Unknown receiving content")
+      _ -> Logger.debug("Unknown receiving content")
     end
 
     handle_info()
   end
 
   defp parse do
-    case HTTPoison.get(@url) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        case Jason.decode!(body) do
-          [map] ->
-            TestApp.Storage.put(
-              %{
-                funding_time: map["fundingTime"],
-                funding_rate: map["fundingRate"]
-              },
-              :process_parse
-            )
-
-          _ ->
-            {:error, "More than one element"}
-        end
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        IO.inspect(reason)
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(@url),
+         [map] <- Jason.decode!(body) do
+      TestApp.Storage.put(
+        %{
+          funding_time: map["fundingTime"],
+          funding_rate: map["fundingRate"]
+        },
+        :process_parse
+      )
+    else
+      {:error, %HTTPoison.Error{reason: reason}} -> Logger.debug(reason)
+      _ -> Logger.debug("Unexcepted message recieve")
     end
-  end
 
-  Process.send_after(
-    :parser,
-    Process.whereis(:parser),
-    10000
-  )
+    Process.send_after(
+      :parser,
+      Process.whereis(:parser),
+      10000
+    )
+  end
 end

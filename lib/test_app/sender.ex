@@ -1,4 +1,6 @@
 defmodule TestApp.Sender do
+  require Logger
+
   @spec start_send :: {:ok, pid}
   def start_send do
     pid = spawn_link(__MODULE__, :handle_info, [])
@@ -11,7 +13,7 @@ defmodule TestApp.Sender do
   def handle_info do
     receive do
       pid when is_pid(pid) -> send()
-      _ -> IO.inspect("Unexpected message received")
+      _ -> Logger.debug("Unexpected message received")
     end
 
     handle_info()
