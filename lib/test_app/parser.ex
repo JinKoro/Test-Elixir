@@ -1,27 +1,27 @@
 defmodule TestApp.Parser do
   @url "https://www.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1"
 
+  @spec start_parse :: {:ok, pid}
   def start_parse() do
-    Process.send_after(
-      spawn(__MODULE__, :handle_info, []),
-      :ok,
-      10000
-    )
+    pid = spawn_link(__MODULE__, :handle_info, [])
+    Process.register(pid, :parser)
+    parse()
 
-    {:ok, self()}
+    {:ok, pid}
   end
 
+  @spec handle_info :: no_return
   def handle_info do
     receive do
-      :ok -> parse(@url)
-      _ -> raise "Unknown receiving content"
+      pid when is_pid(pid) -> parse()
+      _ -> IO.inspect("Unknown receiving content")
     end
 
-    start_parse()
+    handle_info()
   end
 
-  defp parse(url) do
-    case HTTPoison.get(url) do
+  defp parse do
+    case HTTPoison.get(@url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Jason.decode!(body) do
           [map] ->
@@ -41,4 +41,10 @@ defmodule TestApp.Parser do
         IO.inspect(reason)
     end
   end
+
+  Process.send_after(
+    :parser,
+    Process.whereis(:parser),
+    10000
+  )
 end

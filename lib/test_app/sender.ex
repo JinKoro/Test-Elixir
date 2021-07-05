@@ -1,26 +1,30 @@
 defmodule TestApp.Sender do
   @spec start_send :: {:ok, pid}
   def start_send do
-    Process.send_after(
-      spawn(__MODULE__, :handle_info, []),
-      :ok,
-      6000
-    )
+    pid = spawn(__MODULE__, :handle_info, [])
+    Process.register(pid, :sender)
+    send()
 
-    {:ok, self()}
+    {:ok, pid}
   end
 
   def handle_info do
     receive do
-      :ok -> send()
-      _ -> raise "Unknown receiving content"
+      pid when is_pid(pid) -> send()
+      _ -> IO.inspect("Unexpected message received")
     end
 
-    start_send()
+    handle_info()
   end
 
   defp send do
     data = DateTime.to_unix(DateTime.utc_now())
     TestApp.Storage.put(data, :process_send)
+
+    Process.send_after(
+      :sender,
+      Process.whereis(:sender),
+      6000
+    )
   end
 end
