@@ -17,7 +17,6 @@ defmodule TestApp.Storage do
 
   @impl true
   def handle_call(:get, _from, table) do
-    IO.inspect(table)
     {
       :reply,
       table,
@@ -31,7 +30,6 @@ defmodule TestApp.Storage do
   @impl true
   def handle_call({:put, value, process}, _from, table) do
     :ets.insert(:storage, {process, value})
-    IO.inspect(table)
     {:reply, table, table}
   end
 end
