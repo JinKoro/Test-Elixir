@@ -1,8 +1,8 @@
 defmodule TestApp.Storage do
   use GenServer
 
-  def start_link(state \\ %{}) do
-    GenServer.start_link(__MODULE__, state, name: __MODULE__)
+  def start_link(table) do
+    GenServer.start_link(__MODULE__, table, name: __MODULE__)
   end
 
   def put(value, process), do: GenServer.call(__MODULE__, {:put, value, process})
@@ -10,13 +10,28 @@ defmodule TestApp.Storage do
   def get, do: GenServer.call(__MODULE__, :get)
 
   @impl true
-  def init(state), do: {:ok, state}
+  def init(table) do
+    name = :ets.new(table, [:named_table])
+    {:ok, name}
+  end
 
   @impl true
-  def handle_call(:get, _from, state), do: {:reply, state, state}
+  def handle_call(:get, _from, table) do
+    IO.inspect(table)
+    {
+      :reply,
+      table,
+      {
+        :ets.lookup(:storage, :process_send),
+        :ets.lookup(:storage, :process_parse)
+      }
+    }
+  end
 
   @impl true
-  def handle_call({:put, value, process}, _from, state) do
-    {:reply, state, Map.put(state, process, value)}
+  def handle_call({:put, value, process}, _from, table) do
+    :ets.insert(:storage, {process, value})
+    IO.inspect(table)
+    {:reply, table, table}
   end
 end

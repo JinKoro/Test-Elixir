@@ -26,7 +26,7 @@ defmodule TestApp.Supervisor do
   defp storage_child_spec do
     %{
       id: Storage,
-      start: {Storage, :start_link, []}
+      start: {Storage, :start_link, [:storage]}
     }
   end
 
